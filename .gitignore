@@ -27,5 +27,4 @@ producer/app/.idea/
 producer/app/app.iml
 
 producer/app/target/*
-
-
+producer/app/src/main/resource/config.properties
