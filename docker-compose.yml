@@ -1,0 +1,84 @@
+version: '3'
+
+services:
+    rabbitmq:
+        image: rabbitmq:3-management
+        container_name: rabbitmq
+        restart: always
+        ports:
+            - "15672:15672"
+            - "5672:5672"
+        environment:
+            - RABBITMQ_DEFAULT_USER=rabbitmq
+            - RABBITMQ_DEFAULT_PASS=rabbitmq
+
+    jobmanager:
+        image: flink
+        container_name: jobmanager
+        ports:
+            - "8081:8081"
+        expose:
+            - "6123"
+        command: jobmanager
+        environment:
+            - JOB_MANAGER_RPC_ADDRESS=jobmanager
+
+    taskmanager1:
+        image: flink
+        container_name: taskmanager1
+        expose:
+            - "6121"
+            - "6122"
+        command: taskmanager
+        links:
+            - "jobmanager:jobmanager"
+        environment:
+            - JOB_MANAGER_RPC_ADDRESS=jobmanager
+
+    taskmanager2:
+        image: flink
+        container_name: taskmanager2
+        expose:
+            - "6121"
+            - "6122"
+        command: taskmanager
+        links:
+            - "jobmanager:jobmanager"
+        environment:
+            - JOB_MANAGER_RPC_ADDRESS=jobmanager
+
+    taskmanager3:
+        image: flink
+        container_name: taskmanager3
+        expose:
+            - "6121"
+            - "6122"
+        command: taskmanager
+        links:
+            - "jobmanager:jobmanager"
+        environment:
+            - JOB_MANAGER_RPC_ADDRESS=jobmanager
+
+    producer:
+        build:
+            context: .
+            dockerfile: ./producer/dockerfile
+        volumes:
+            - ./producer/app:/app
+        links:
+            - rabbitmq:rabbitmq
+        environment:
+            - RABBITMQ_USER=rabbitmq
+            - RABBITMQ_PASS=rabbitmq
+
+    consumer:
+        build:
+            context: .
+            dockerfile: ./producer/dockerfile
+        volumes:
+            - ./consumer:/app
+        links:
+            - rabbitmq:rabbitmq
+        environment:
+            - RABBITMQ_USER=rabbitmq
+            - RABBITMQ_PASS=rabbitmq
