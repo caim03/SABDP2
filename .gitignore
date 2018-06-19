@@ -24,10 +24,12 @@
 hs_err_pid*
 .idea/
 data/
+results/
 producer/app/.idea/
 producer/app/app.iml
 
 producer/app/target/*
+consumer/consumer/target/*
 /producer/app/src/main/resources/config.properties
 
 consumer/consumer/consumer.iml
