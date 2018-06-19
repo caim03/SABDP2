@@ -28,3 +28,5 @@ producer/app/app.iml
 
 producer/app/target/*
 /producer/app/src/main/resources/config.properties
+
+consumer/consumer/consumer.iml
