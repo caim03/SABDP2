@@ -25,9 +25,12 @@ public class Main {
                 properties.getProperty("password"),
                 properties.getProperty("queue"));
 
-        /* Ne scrivo una sola per prova */
-        String message = data.get(0);
-        manager.send(message);
+        /* Ne scrivo 100 per prova */
+
+        for(int i=0; i<100; i++){
+            String message = data.get(i);
+            manager.send(message);
+        }
 
         /* Una volta finito chiudo */
         manager.terminate();

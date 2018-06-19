@@ -1,11 +1,8 @@
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.streaming.connectors.rabbitmq.RMQSink;
 import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
@@ -37,10 +34,10 @@ public class RabbitmqStreamProcessor extends FlinkRabbitmq {
                 queueName,
                 new SimpleStringSchema()));
 
-        dataStream.map(new MapFunction<String, Object>() {
+        dataStream.map(new MapFunction<String, String>() {
 
             @Override
-            public Object map(String s) throws Exception {
+            public String map(String s) throws Exception {
                 return "Messaggio da Flink: " + s;
             }
         }).setParallelism(1).writeAsText("/results/prova.out");
