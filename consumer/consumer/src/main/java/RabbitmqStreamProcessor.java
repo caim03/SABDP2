@@ -1,12 +1,13 @@
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.common.functions.FilterFunction;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.connectors.rabbitmq.RMQSink;
 import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
-import org.apache.flink.util.Collector;
 
 public class RabbitmqStreamProcessor extends FlinkRabbitmq {
 
@@ -27,22 +28,16 @@ public class RabbitmqStreamProcessor extends FlinkRabbitmq {
         DataStream<String> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
                 queueName,
                 new SimpleStringSchema()));
-        dataStream.writeAsText("output.out");
-        DataStream<Tuple2<String, Integer>> pairs = dataStream.flatMap(new TextLengthCalculator());
 
-        pairs.print();
+        dataStream.map(new MapFunction<String, Object>() {
 
-        env.execute("Flink-Rabbitmq Stream Processor");
+            @Override
+            public Object map(String s) throws Exception {
+                return "Messaggio da Flink: " + s;
+            }
+        }).setParallelism(1).writeAsText("/results/prova.out");
 
-    }
-
-    public static final class TextLengthCalculator implements FlatMapFunction<String, Tuple2<String, Integer>> {
-
-        @Override
-        public void flatMap(String value, Collector<Tuple2<String, Integer>> out) {
-            out.collect(new Tuple2<String, Integer>(value, value.length()));
-        }
+        env.execute();
 
     }
-
 }
