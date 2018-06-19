@@ -24,6 +24,7 @@ services:
             - JOB_MANAGER_RPC_ADDRESS=jobmanager
         volumes:
             - ./consumer/consumer:/app
+            - ./results:/results
 
     taskmanager1:
         image: flink

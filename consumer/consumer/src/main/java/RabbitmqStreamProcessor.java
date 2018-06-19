@@ -1,5 +1,7 @@
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -17,6 +19,12 @@ public class RabbitmqStreamProcessor extends FlinkRabbitmq {
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
+
+        Path path = new Path("/results/prova.out");
+
+        if(FileSystem.getLocalFileSystem().exists(path)){
+            FileSystem.getLocalFileSystem().delete(path, true);
+        }
 
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
                 .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
