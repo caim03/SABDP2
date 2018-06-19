@@ -41,7 +41,7 @@ public class RabbitMQManager {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
-            boolean durable = false;
+            boolean durable = true;
             boolean exclusive = false;
             boolean autoDelete = false;
 

@@ -22,6 +22,8 @@ services:
         command: jobmanager
         environment:
             - JOB_MANAGER_RPC_ADDRESS=jobmanager
+        volumes:
+            - ./consumer/consumer:/app
 
     taskmanager1:
         image: flink
