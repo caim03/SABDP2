@@ -12,8 +12,21 @@ public class FriendshipEvent extends Event {
         super(record.split("\\|")[0]);
 
         String[] arrayList = record.split("\\|");
-        this.userId1 = Long.valueOf(arrayList[1]);
-        this.userId2 = Long.valueOf(arrayList[2]);
+
+        Long user1 = Long.valueOf(arrayList[1]);
+        Long user2 = Long.valueOf(arrayList[2]);
+
+        if(user1<user2) {
+            this.userId1 = user1;
+            this.userId2 = user2;
+        }
+        else
+        {
+            this.userId1 = user2;
+            this.userId1 = user1;
+        }
+
+
         this.timeSlot = Integer.valueOf(arrayList[0].substring(11,13));
     }
 

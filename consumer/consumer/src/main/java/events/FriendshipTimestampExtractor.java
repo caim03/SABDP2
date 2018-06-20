@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 /**
  * Created by Caim03 on 20/06/18.
  */
-public class FriendshipTimestampExtractor implements AssignerWithPeriodicWatermarks<Tuple4<Long, Integer, Long, Long>> {
+public class FriendshipTimestampExtractor implements AssignerWithPeriodicWatermarks<FriendshipEvent> {
     @Nullable
     @Override
     public Watermark getCurrentWatermark() {
@@ -17,7 +17,7 @@ public class FriendshipTimestampExtractor implements AssignerWithPeriodicWaterma
     }
 
     @Override
-    public long extractTimestamp(Tuple4<Long, Integer, Long, Long> e, long l) {
-        return e.f0;
+    public long extractTimestamp(FriendshipEvent e, long l) {
+        return e.getTimestamp();
     }
 }

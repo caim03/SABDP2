@@ -1,25 +1,18 @@
 import events.FriendshipEvent;
 import events.FriendshipTimestampExtractor;
-import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.tuple.Tuple;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
-import org.apache.flink.util.Collector;
-import scala.Int;
 
 public class RabbitmqStreamProcessor extends FlinkRabbitmq {
 
@@ -44,26 +37,21 @@ public class RabbitmqStreamProcessor extends FlinkRabbitmq {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStream<Tuple4<Long, Integer, Long, Long>> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
+        DataStream<Tuple3<Integer,Long,Long>> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
                 queueName,
                 new SimpleStringSchema())).map(line -> new FriendshipEvent(line))
-                .flatMap((FlatMapFunction<FriendshipEvent, Tuple4<Long, Integer, Long, Long>>) (event, collector) -> {
-                    if(event.getUserId1() < event.getUserId2()){
-                        collector.collect(new Tuple4<>(event.getTimestamp(), event.getTimeSlot(), event.getUserId1(), event.getUserId2()));
-                    }
-                    else{
-                        collector.collect(new Tuple4<>(event.getTimestamp(), event.getTimeSlot(), event.getUserId2(), event.getUserId1()));
-                    }
-                });
-
-        WindowedStream windowedStream = dataStream
-                // TODO FALLISCE QUA
                 .assignTimestampsAndWatermarks(new FriendshipTimestampExtractor())
-                .flatMap((FlatMapFunction<Tuple4<Long, Integer, Long, Long>, Tuple3<Integer, Long, Long>>) (event, collector) -> {
-                    collector.collect(new Tuple3<>(event.f1, event.f2, event.f3));
-                })
-                .keyBy(0,1,2)
-                .timeWindow(Time.hours(1));
+                .map(new MyMapper())
+                .<KeyedStream<Tuple3<Integer, Long, Long>,Tuple3<Integer, Long, Long>>>keyBy(0,1,2)
+                .reduce(new MyReducer())
+                ;
+//
+//
+//
+//        WindowedStream windowedStream = dataStream
+//                .map(event -> new Tuple3<>(event.getTimeSlot(),event.getUserId1(),event.getUserId2()))
+//                .<KeyedStream<Tuple3<Integer, Long, Long>,Tuple3<Integer, Long, Long>>>keyBy(0,1,2)
+//                .timeWindow(Time.hours(24));
 
         /*DataStreamSink<Tuple2<Integer, Long>> counters = windowedStream
                 .reduce((tupla1, tupla2) -> tupla1)
@@ -85,4 +73,26 @@ public class RabbitmqStreamProcessor extends FlinkRabbitmq {
         env.execute();
 
     }
+
+
+    public static class MyMapper implements MapFunction<FriendshipEvent, Tuple3<Integer,Long,Long>> {
+
+        @Override
+        public Tuple3<Integer, Long,Long> map(FriendshipEvent event) throws Exception {
+            return new Tuple3<>(event.getTimeSlot(),event.getUserId1(),event.getUserId2());
+        }
+    }
+
+
+    public static class MyReducer implements ReduceFunction<Tuple3<Integer,Long,Long>>
+    {
+
+        @Override
+        public Tuple3<Integer, Long, Long> reduce(Tuple3<Integer, Long, Long> t1, Tuple3<Integer, Long, Long> t2) throws Exception {
+            return t1;
+        }
+    }
+    
 }
+
+
