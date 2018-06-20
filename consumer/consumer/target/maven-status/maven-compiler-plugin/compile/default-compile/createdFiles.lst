@@ -1,3 +1,9 @@
-RabbitmqStreamProcessor$1.class
+events/Event.class
+events/FriendshipTimestampExtractor.class
+events/CommentEvent.class
+events/PostTimestampExtractor.class
 RabbitmqStreamProcessor.class
+events/FriendshipEvent.class
+events/CommentTimestampExtractor.class
 FlinkRabbitmq.class
+events/PostEvent.class

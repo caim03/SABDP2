@@ -16,24 +16,43 @@ public class Main {
         ReadProperties readProperties = new ReadProperties();
         Properties properties = readProperties.getProperties();
         ReaderManager readerManager = ReaderManager.getInstance();
-        ArrayList<String> data;
+        ArrayList<String> friendsData;
+        ArrayList<String> postsData;
+        ArrayList<String> commentsData;
 
-        data = readerManager.readFile("data/friendships.dat");
+        /* RabbitMQ Config */
+        final String HOST = properties.getProperty("host");
+        final String USER = properties.getProperty("username");
+        final String PWD = properties.getProperty("password");
 
-        RabbitMQManager manager = new RabbitMQManager(properties.getProperty("host"),
-                properties.getProperty("username"),
-                properties.getProperty("password"),
-                properties.getProperty("queue"));
+        /* Queues */
+        final String FRIENDS = properties.getProperty("friendship");
+        final String POSTS = properties.getProperty("posts");
+        final String COMMENTS = properties.getProperty("comments");
 
-        /* Ne scrivo 100 per prova */
+        /* Data Paths */
+        final String FRIENDPATH = properties.getProperty("friendData");
+        final String POSTPATH = properties.getProperty("postData");
+        final String COMMENTPATH = properties.getProperty("commentData");
 
-        for(int i=0; i<100; i++){
-            String message = data.get(i);
-            manager.send(message);
+        friendsData = readerManager.readFile(FRIENDPATH);
+        postsData = readerManager.readFile(POSTPATH);
+        commentsData = readerManager.readFile(COMMENTPATH);
+
+        RabbitMQManager friendManager = new RabbitMQManager(HOST, USER, PWD, FRIENDS);
+        RabbitMQManager postManager = new RabbitMQManager(HOST, USER, PWD, POSTS);
+        RabbitMQManager commentManager = new RabbitMQManager(HOST, USER, PWD, COMMENTS);
+
+        for(int i=0; i < 10; i++){
+            friendManager.send(friendsData.get(i));
         }
+        /*postManager.send(postsData.get(0));
+        commentManager.send(commentsData.get(0));*/
 
         /* Una volta finito chiudo */
-        manager.terminate();
+        friendManager.terminate();
+        postManager.terminate();
+        commentManager.terminate();
     }
 }
 

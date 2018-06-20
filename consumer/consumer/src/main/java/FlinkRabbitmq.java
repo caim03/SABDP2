@@ -9,7 +9,7 @@ import java.io.IOException;
 public class FlinkRabbitmq extends RMQSource {
 
     public static String exchangeName          = "simpl_exchange";
-    public static String queueName             = "queue";
+    public static String queueName             = "friendship";
     public static String rabbitmqHostname      = "rabbitmq";
     public static String rabbitmqVirtualHost   = "/";
     public static String rabbitmqUsername      = "rabbitmq";
