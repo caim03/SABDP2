@@ -43,9 +43,16 @@ public class Main {
         RabbitMQManager postManager = new RabbitMQManager(HOST, USER, PWD, POSTS);
         RabbitMQManager commentManager = new RabbitMQManager(HOST, USER, PWD, COMMENTS);
 
-        for(int i=0; i < 10; i++){
+        int i = 0;
+        while(i<friendsData.size())
+        {
             friendManager.send(friendsData.get(i));
+            i++;
         }
+//
+//        for(int i=0; i < 100; i++){
+//            friendManager.send(friendsData.get(i));
+//        }
         /*postManager.send(postsData.get(0));
         commentManager.send(commentsData.get(0));*/
 

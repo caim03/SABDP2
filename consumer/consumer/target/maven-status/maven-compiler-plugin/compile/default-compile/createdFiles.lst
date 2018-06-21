@@ -1,11 +1,12 @@
 events/FriendshipTimestampExtractor.class
 RabbitmqStreamProcessor.class
 events/CommentEvent.class
-RabbitmqStreamProcessor$Mapper.class
 events/CommentTimestampExtractor.class
-RabbitmqStreamProcessor$Reducer.class
 events/Event.class
 events/PostTimestampExtractor.class
 events/FriendshipEvent.class
+RabbitmqStreamProcessor$MyMapper.class
+RabbitmqStreamProcessor$MyReducer.class
 FlinkRabbitmq.class
+RabbitmqStreamProcessor$MyMapper2.class
 events/PostEvent.class

@@ -1,7 +1,9 @@
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/FlinkRabbitmq.java
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/events/PostEvent.java
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/events/Event.java
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/events/CommentEvent.java
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/events/FriendshipEvent.java
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/TimestampExtractor.java
-/Users/Caim03/Documents/Università/SABD/Progetto2/SABDp2/consumer/consumer/src/main/java/RabbitmqStreamProcessor.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/CommentEvent.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/Event.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/FriendshipTimestampExtractor.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/FriendshipEvent.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/CommentTimestampExtractor.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/PostEvent.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/RabbitmqStreamProcessor.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/FlinkRabbitmq.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/PostTimestampExtractor.java
