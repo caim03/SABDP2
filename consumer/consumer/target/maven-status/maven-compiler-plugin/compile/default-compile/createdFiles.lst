@@ -2,11 +2,15 @@ events/FriendshipTimestampExtractor.class
 RabbitmqStreamProcessor.class
 events/CommentEvent.class
 events/CommentTimestampExtractor.class
+RabbitmqStreamProcessor$MyKey.class
+RabbitmqStreamProcessor$WindowKey.class
 events/Event.class
+RabbitmqStreamProcessor$Counter.class
 events/PostTimestampExtractor.class
 events/FriendshipEvent.class
 RabbitmqStreamProcessor$MyMapper.class
 RabbitmqStreamProcessor$MyReducer.class
 FlinkRabbitmq.class
 RabbitmqStreamProcessor$MyMapper2.class
+RabbitmqStreamProcessor$StringConcat.class
 events/PostEvent.class

@@ -12,7 +12,7 @@ public abstract class Event {
 
     public Event(String time){
         try{
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             Date dt = sdf.parse(time);
             this.timestamp = dt.getTime();
         }

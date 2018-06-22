@@ -12,7 +12,7 @@ import java.util.concurrent.TimeoutException;
 
 public class Main {
 
-    public static void main(String[] args) throws java.io.IOException, TimeoutException {
+    public static void main(String[] args) throws java.io.IOException, TimeoutException, InterruptedException {
         ReadProperties readProperties = new ReadProperties();
         Properties properties = readProperties.getProperties();
         ReaderManager readerManager = ReaderManager.getInstance();
@@ -48,6 +48,7 @@ public class Main {
         {
             friendManager.send(friendsData.get(i));
             i++;
+            Thread.sleep(10);
         }
 //
 //        for(int i=0; i < 100; i++){

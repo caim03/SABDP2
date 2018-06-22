@@ -1,5 +1,7 @@
 package events;
 
+import java.text.SimpleDateFormat;
+
 /**
  * Created by Caim03 on 20/06/18.
  */
@@ -56,8 +58,12 @@ public class FriendshipEvent extends Event {
 
     @Override
     public String toString() {
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss\"");
+        String time = sdf.format(timestamp);
+
         return "FriendshipEvent{" +
-                "timestamp=" + timestamp +
+                " timestamp=" + time +
                 ", userId1=" + userId1 +
                 ", userId2=" + userId2 +
                 ", hour=" + timeSlot +
