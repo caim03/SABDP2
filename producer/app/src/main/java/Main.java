@@ -48,7 +48,7 @@ public class Main {
         {
             friendManager.send(friendsData.get(i));
             i++;
-            Thread.sleep(10);
+            //Thread.sleep(10);
         }
 //
 //        for(int i=0; i < 100; i++){
