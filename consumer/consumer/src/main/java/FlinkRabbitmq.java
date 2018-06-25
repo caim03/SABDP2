@@ -9,7 +9,9 @@ import java.io.IOException;
 public class FlinkRabbitmq extends RMQSource {
 
     public static String exchangeName          = "simpl_exchange";
-    public static String queueName             = "friendship";
+    public static String friendQueue           = "friendship";
+    public static String postQueue             = "posts";
+    public static String commentQueue          = "comments";
     public static String rabbitmqHostname      = "rabbitmq";
     public static String rabbitmqVirtualHost   = "/";
     public static String rabbitmqUsername      = "rabbitmq";
@@ -17,7 +19,7 @@ public class FlinkRabbitmq extends RMQSource {
     public static Integer rabbitmqPort         = 5672;
     public static boolean durableQueue         = true;
 
-    public static Logger logger = LoggerFactory.getLogger(RabbitmqStreamProcessor.class);
+    public static Logger logger = LoggerFactory.getLogger(Query1.class);
 
     public FlinkRabbitmq(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
         super(rmqConnectionConfig, queueName, deserializationSchema);

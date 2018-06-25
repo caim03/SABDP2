@@ -20,9 +20,9 @@ import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 
-public class RabbitmqStreamProcessor extends FlinkRabbitmq {
+public class Query1 extends FlinkRabbitmq {
 
-    public RabbitmqStreamProcessor(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
+    public Query1(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
         super(rmqConnectionConfig, queueName, deserializationSchema);
     }
 
@@ -44,8 +44,8 @@ public class RabbitmqStreamProcessor extends FlinkRabbitmq {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         DataStream<FriendshipEvent> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
-                queueName,
-                new SimpleStringSchema())).map(line -> new FriendshipEvent(line));
+                friendQueue,
+                new SimpleStringSchema())).map(line -> new FriendshipEvent(line, true));
 
 
         KeyedStream<Tuple3<Integer, Long, Long>, Tuple> commonStream = dataStream

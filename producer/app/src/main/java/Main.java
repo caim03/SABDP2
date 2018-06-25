@@ -44,18 +44,23 @@ public class Main {
         RabbitMQManager commentManager = new RabbitMQManager(HOST, USER, PWD, COMMENTS);
 
         int i = 0;
-        while(i<friendsData.size())
+        long size = Math.max(Math.max(friendsData.size(), postsData.size()), commentsData.size());
+
+        while(i<size)
         {
-            friendManager.send(friendsData.get(i));
+            if(i < friendsData.size()){
+                friendManager.send(friendsData.get(i));
+            }
+
+            if(i < postsData.size()){
+                postManager.send(postsData.get(i));
+            }
+
+            if(i < commentsData.size()){
+                commentManager.send(commentsData.get(i));
+            }
             i++;
-            //Thread.sleep(10);
         }
-//
-//        for(int i=0; i < 100; i++){
-//            friendManager.send(friendsData.get(i));
-//        }
-        /*postManager.send(postsData.get(0));
-        commentManager.send(commentsData.get(0));*/
 
         /* Una volta finito chiudo */
         friendManager.terminate();

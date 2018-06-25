@@ -19,8 +19,14 @@ public class CommentEvent extends Event {
         this.userId = Long.valueOf(arrayList[2]);
         this.comment = arrayList[3];
         this.user = arrayList[4];
-        this.commentReplied = Long.valueOf(arrayList[5]);
-        this.postCommented = Long.valueOf(arrayList[6]);
+        if(arrayList.length == 7){
+            this.commentReplied = -1;
+            this.postCommented = Long.valueOf(arrayList[6]);
+        }
+        else{
+            this.commentReplied = Long.valueOf(arrayList[5]);
+            this.postCommented = -1;
+        }
     }
 
     public long getCommentId() {
