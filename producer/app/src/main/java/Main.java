@@ -35,6 +35,8 @@ public class Main {
         final String POSTPATH = properties.getProperty("postData");
         final String COMMENTPATH = properties.getProperty("commentData");
 
+        final boolean ALLSTREAMFRIEND = Boolean.valueOf(properties.getProperty("allStreamingFriend"));
+
         friendsData = readerManager.readFile(FRIENDPATH);
         postsData = readerManager.readFile(POSTPATH);
         commentsData = readerManager.readFile(COMMENTPATH);
@@ -45,6 +47,7 @@ public class Main {
 
         int i = 0;
         long size = Math.max(Math.max(friendsData.size(), postsData.size()), commentsData.size());
+
 
         while(i<size)
         {
@@ -61,6 +64,22 @@ public class Main {
             }
             i++;
         }
+
+
+        /* Ricordarsi di mettere a true questo campo se bisogna fare la global window in Query1 */
+        if(ALLSTREAMFRIEND){
+            int j = 0;
+            while(j < 24){
+                if(j < 10){
+                    friendManager.send("2015-02-03T0" + j + ":35:50.015+0000|-1|-1");
+                }
+                else{
+                    friendManager.send("2015-02-03T" + j + ":35:50.015+0000|-1|-1");
+                }
+                j++;
+            }
+        }
+
 
         /* Una volta finito chiudo */
         friendManager.terminate();

@@ -1,11 +1,14 @@
 Query1.class
 operators/mapper/UserIdFriendMapper.class
+operators/reducer/CountReducer.class
 operators/mapper/UserIdCommentMapper.class
 events/CommentTimestampExtractor.class
 operators/keyBy/KeyByUser.class
 Query3.class
 operators/keyBy/JoinKey.class
 operators/mapper/CommentMapper.class
+operators/mapper/MyMapper3.class
+operators/evictor/UserEvictor.class
 events/Event.class
 events/PostTimestampExtractor.class
 operators/mapper/UserIdPostMapper.class
@@ -29,3 +32,5 @@ operators/apply/StringConcat.class
 operators/keyBy/KeyByPostId.class
 operators/apply/UserCounter.class
 operators/reducer/ReduceDuplicate.class
+operators/keyBy/MyKey2.class
+operators/trigger/UserTrigger.class

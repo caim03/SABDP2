@@ -43,52 +43,80 @@ public class Query3 extends FlinkRabbitmq{
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStream<FriendshipEvent> friendStream = env.addSource(new RMQSource<String>(connectionConfig,
+        DataStream<FriendshipEvent> friendStream = env.addSource(new RMQSource<>(connectionConfig,
                 friendQueue,
                 new SimpleStringSchema())).map(line -> new FriendshipEvent(line, false));
 
-        DataStream<PostEvent> postStream = env.addSource(new RMQSource<String>(connectionConfig,
+        DataStream<PostEvent> postStream = env.addSource(new RMQSource<>(connectionConfig,
                 postQueue,
                 new SimpleStringSchema())).map(line -> new PostEvent(line));
 
-        DataStream<CommentEvent> commentStream = env.addSource(new RMQSource<String>(connectionConfig,
+        DataStream<CommentEvent> commentStream = env.addSource(new RMQSource<>(connectionConfig,
                 commentQueue,
                 new SimpleStringSchema())).map(line -> new CommentEvent(line));
 
 
+        DataStream<String> unionStreamHour = streaming(0, friendStream, postStream, commentStream);
+        DataStream<String> unionStreamDay = streaming(1, friendStream, postStream, commentStream);
+        DataStream<String> unionStreamWeek = streaming(2, friendStream, postStream, commentStream);
+
+
+        unionStreamHour.writeAsText("/results/query3/1hour.out").setParallelism(1);
+        unionStreamDay.writeAsText("/results/query3/1day.out").setParallelism(1);
+        unionStreamWeek.writeAsText("/results/query3/1week.out").setParallelism(1);
+
+        env.execute();
+    }
+
+    private static DataStream<String> streaming(int type, DataStream<FriendshipEvent> friendStream,
+                                                DataStream<PostEvent> postStream, DataStream<CommentEvent> commentStream){
+
+        Time timeWindow;
+
+        switch (type){
+            case 0:
+                timeWindow = Time.hours(1);
+                break;
+            case 1:
+                timeWindow = Time.days(1);
+                break;
+            case 2:
+                timeWindow = Time.days(7);
+                break;
+            default:
+                timeWindow = Time.hours(1);
+        }
 
         DataStream<Tuple3<Long, Long, Long>> friendQuery = friendStream
                 .assignTimestampsAndWatermarks(new FriendshipTimestampExtractor())
                 .map(new UserIdFriendMapper())
                 .keyBy(new KeyByUser())
-                .timeWindow(Time.days(1))
+                .timeWindow(timeWindow)
                 .apply(new UserCounter());
 
         DataStream<Tuple3<Long, Long, Long>> postQuery = postStream
                 .assignTimestampsAndWatermarks(new PostTimestampExtractor())
                 .map(new UserIdPostMapper())
                 .keyBy(new KeyByUser())
-                .timeWindow(Time.days(1))
+                .timeWindow(timeWindow)
                 .apply(new UserCounter());
 
         DataStream<Tuple3<Long, Long, Long>> commentQuery = commentStream
                 .assignTimestampsAndWatermarks(new CommentTimestampExtractor())
                 .map(new UserIdCommentMapper())
                 .keyBy(new KeyByUser())
-                .timeWindow(Time.days(1))
+                .timeWindow(timeWindow)
                 .apply(new UserCounter());
 
         DataStream<String> unionStream = friendQuery
                 .union(postQuery, commentQuery)
                 .keyBy(new JoinKey())
-                .timeWindow(Time.days(1))
+                .timeWindow(timeWindow)
                 .apply(new JoinCounter())
                 .keyBy(new KeyByWindowStart())
-                .timeWindow(Time.days(1))
+                .timeWindow(timeWindow)
                 .apply(new Ranking());
 
-        unionStream.writeAsText("/results/query3/prova.out").setParallelism(1);
-
-        env.execute();
+        return unionStream;
     }
 }
