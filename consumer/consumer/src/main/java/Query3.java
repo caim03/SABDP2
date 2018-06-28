@@ -16,6 +16,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.connectors.rabbitmq.RMQSink;
 import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
@@ -28,6 +29,8 @@ public class Query3 extends FlinkRabbitmq{
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
+
+        boolean writeOnFile = false;
 
         Path path = new Path("/results/query3");
 
@@ -61,10 +64,29 @@ public class Query3 extends FlinkRabbitmq{
         DataStream<String> unionStreamWeek = streaming(2, friendStream, postStream, commentStream);
 
 
-        unionStreamHour.writeAsText("/results/query3/1hour.out").setParallelism(1);
-        unionStreamDay.writeAsText("/results/query3/1day.out").setParallelism(1);
-        unionStreamWeek.writeAsText("/results/query3/1week.out").setParallelism(1);
+        if(writeOnFile) {
+            unionStreamHour.writeAsText("/results/query3/1hour.out").setParallelism(1);
+            unionStreamDay.writeAsText("/results/query3/1day.out").setParallelism(1);
+            unionStreamWeek.writeAsText("/results/query3/1week.out").setParallelism(1);
+        }
+        else
+        {
+            unionStreamHour.addSink(new RMQSink<String>(
+                    connectionConfig,            // config for the RabbitMQ connection
+                    query3_1h,                 // name of the RabbitMQ queue to send messages to
+                    new SimpleStringSchema()));  // serialization schema to turn Java objects to messages
 
+            unionStreamDay.addSink(new RMQSink<String>(
+                    connectionConfig,            // config for the RabbitMQ connection
+                    query3_1d,                 // name of the RabbitMQ queue to send messages to
+                    new SimpleStringSchema()));  // serialization schema to turn Java objects to messages
+
+            unionStreamWeek.addSink(new RMQSink<String>(
+                    connectionConfig,            // config for the RabbitMQ connection
+                    query3_1w,                 // name of the RabbitMQ queue to send messages to
+                    new SimpleStringSchema()));  // serialization schema to turn Java objects to messages
+
+        }
         env.execute();
     }
 

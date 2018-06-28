@@ -22,6 +22,7 @@ import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.connectors.rabbitmq.RMQSink;
 import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
@@ -35,7 +36,9 @@ public class Query1 extends FlinkRabbitmq {
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
         /* METTERE QUESTO PARAMETRO A TRUE SOLO SE SI FA GLOBAL STREAM */
-        boolean allStreamFriend = true;
+
+        boolean allStreamFriend = false;
+        boolean writeOnFile = false;
 
         Path path = new Path("/results/query1");
 
@@ -103,8 +106,24 @@ public class Query1 extends FlinkRabbitmq {
                     //Produce la stringa di output
                     .apply(new StringConcat());
 
-            hoursStream.writeAsText("/results/query1/24hours.out").setParallelism(1);
-            weekStream.writeAsText("/results/query1/7days.out").setParallelism(1);
+            if(writeOnFile)
+            {
+                hoursStream.writeAsText("/results/query1/24hours.out").setParallelism(1);
+                weekStream.writeAsText("/results/query1/7days.out").setParallelism(1);
+
+            }
+            else {
+
+                hoursStream.addSink(new RMQSink<String>(
+                        connectionConfig,            // config for the RabbitMQ connection
+                        query1_24h,                 // name of the RabbitMQ queue to send messages to
+                        new SimpleStringSchema()));  // serialization schema to turn Java objects to messages
+
+                weekStream.addSink(new RMQSink<String>(
+                        connectionConfig,            // config for the RabbitMQ connection
+                        query1_7d,                 // name of the RabbitMQ queue to send messages to
+                        new SimpleStringSchema()));  // serialization schema to turn Java objects to messages
+            }
         }
 
         else{
@@ -117,7 +136,9 @@ public class Query1 extends FlinkRabbitmq {
                     .evictor(new UserEvictor())
                     .apply(new CountReducer());
 
-            allStream.writeAsText("/results/query1/allDays.out").setParallelism(1);
+            if(writeOnFile)
+                allStream.writeAsText("/results/query1/allDays.out").setParallelism(1);
+            //TODO else
         }
 
         env.execute();

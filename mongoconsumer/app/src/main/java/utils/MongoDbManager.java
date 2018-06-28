@@ -4,6 +4,10 @@ import com.mongodb.*;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MongoDbManager {
 
     static MongoClient mongoClient;
@@ -39,8 +43,11 @@ public class MongoDbManager {
     }
     public void save(String body, String queue)
     {
+        Document doc = new Document();
+        doc.append("Start" , body.split(",")[0]);
+        doc.append("Values" , body.substring(body.indexOf(",")+2,body.length()));
 
-        db.getCollection(queue).insertOne(new Document(body.split(",")[0] , body));
+        db.getCollection(queue).insertOne(doc);
 
 
     }
