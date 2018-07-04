@@ -1,4 +1,4 @@
-package operators.reducer;
+package operators.apply;
 
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -11,7 +11,7 @@ import org.apache.flink.util.Collector;
 /**
  * Created by Caim03 on 26/06/18.
  */
-public class CountReducer implements WindowFunction<
+public class FullFriendshipCounter implements WindowFunction<
         Tuple3<Integer, Long, Long>,
         Tuple2<Integer, Long>,
         Integer,

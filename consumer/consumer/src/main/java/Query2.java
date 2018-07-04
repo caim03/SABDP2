@@ -1,11 +1,13 @@
 import events.CommentEvent;
 import events.CommentTimestampExtractor;
+import operators.aggregator.PostCounterAgg;
 import operators.apply.PostCounter;
 import operators.apply.Ranking;
 import operators.filter.PostFilter;
 import operators.keyBy.KeyByPostId;
 import operators.keyBy.KeyByWindowStart;
 import operators.mapper.CommentMapper;
+import operators.windowFunction.ProcessPostCounterWF;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.fs.FileSystem;
@@ -28,7 +30,8 @@ public class Query2 extends FlinkRabbitmq{
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
-        boolean writeOnFile = false;
+        boolean writeOnFile = true;
+        boolean useApply = true;
 
         Path path = new Path("/results/query2");
 
@@ -54,27 +57,56 @@ public class Query2 extends FlinkRabbitmq{
                 .filter(new PostFilter())
                 .keyBy(new KeyByPostId());
 
-        DataStream<String> hourStream = filtered
-                .timeWindow(Time.hours(1))
-                .apply(new PostCounter())
-                .keyBy(new KeyByWindowStart())
-                .timeWindow(Time.hours(1))
-                .apply(new Ranking());
+        DataStream<String> hourStream;
+        DataStream<String> dayStream;
+        DataStream<String> weekStream;
 
-        DataStream<String> dayStream = filtered
-                .timeWindow(Time.days(1))
-                .apply(new PostCounter())
-                .keyBy(new KeyByWindowStart())
-                .timeWindow(Time.days(1))
-                .apply(new Ranking());
+        if(useApply)
+        {
+            hourStream = filtered
+                    .timeWindow(Time.hours(1))
+                    .apply(new PostCounter())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(Time.hours(1))
+                    .apply(new Ranking());
 
-        DataStream<String> weekStream = filtered
-                .timeWindow(Time.days(7))
-                .apply(new PostCounter())
-                .keyBy(new KeyByWindowStart())
-                .timeWindow(Time.days(7))
-                .apply(new Ranking());
+            dayStream = filtered
+                    .timeWindow(Time.days(1))
+                    .apply(new PostCounter())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(Time.days(1))
+                    .apply(new Ranking());
 
+            weekStream = filtered
+                    .timeWindow(Time.days(7))
+                    .apply(new PostCounter())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(Time.days(7))
+                    .apply(new Ranking());
+        }
+        else
+        {
+            hourStream = filtered
+                    .timeWindow(Time.hours(1))
+                    .aggregate(new PostCounterAgg(), new ProcessPostCounterWF())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(Time.hours(1))
+                    .apply(new Ranking());
+
+            dayStream = filtered
+                    .timeWindow(Time.days(1))
+                    .aggregate(new PostCounterAgg(), new ProcessPostCounterWF())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(Time.days(1))
+                    .apply(new Ranking());
+
+            weekStream = filtered
+                    .timeWindow(Time.days(7))
+                    .aggregate(new PostCounterAgg(), new ProcessPostCounterWF())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(Time.days(7))
+                    .apply(new Ranking());
+        }
 
         if(writeOnFile) {
             hourStream.writeAsText("/results/query2/1hour.out").setParallelism(1);

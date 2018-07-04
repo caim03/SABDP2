@@ -1,0 +1,11 @@
+operators/apply/FullFriendshipCounter.class
+operators/aggregator/JoinCounterAgg.class
+operators/aggregator/StringConcatAgg.class
+operators/aggregator/PostCounterAgg.class
+operators/apply/FriendShipCounter.class
+operators/aggregator/FriendShipCounterAgg.class
+operators/windowFunction/FriendshipCounterWF.class
+operators/windowFunction/UserCounterWF.class
+operators/aggregator/UserCounterAgg.class
+operators/windowFunction/ProcessPostCounterWF.class
+operators/aggregator/FullFriendshipCounterAgg.class

@@ -1,4 +1,6 @@
 import events.*;
+import operators.aggregator.JoinCounterAgg;
+import operators.aggregator.UserCounterAgg;
 import operators.apply.JoinCounter;
 import operators.apply.Ranking;
 import operators.apply.UserCounter;
@@ -8,6 +10,7 @@ import operators.keyBy.KeyByWindowStart;
 import operators.mapper.UserIdCommentMapper;
 import operators.mapper.UserIdFriendMapper;
 import operators.mapper.UserIdPostMapper;
+import operators.windowFunction.UserCounterWF;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem;
@@ -30,8 +33,8 @@ public class Query3 extends FlinkRabbitmq{
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
-        boolean writeOnFile = false;
-
+        boolean writeOnFile = true;
+        boolean useApply = true;
         Path path = new Path("/results/query3");
 
         if(FileSystem.getLocalFileSystem().exists(path)){
@@ -59,9 +62,9 @@ public class Query3 extends FlinkRabbitmq{
                 new SimpleStringSchema())).map(line -> new CommentEvent(line));
 
 
-        DataStream<String> unionStreamHour = streaming(0, friendStream, postStream, commentStream);
-        DataStream<String> unionStreamDay = streaming(1, friendStream, postStream, commentStream);
-        DataStream<String> unionStreamWeek = streaming(2, friendStream, postStream, commentStream);
+        DataStream<String> unionStreamHour = streaming(0, friendStream, postStream, commentStream, useApply);
+        DataStream<String> unionStreamDay = streaming(1, friendStream, postStream, commentStream, useApply);
+        DataStream<String> unionStreamWeek = streaming(2, friendStream, postStream, commentStream, useApply);
 
 
         if(writeOnFile) {
@@ -91,7 +94,7 @@ public class Query3 extends FlinkRabbitmq{
     }
 
     private static DataStream<String> streaming(int type, DataStream<FriendshipEvent> friendStream,
-                                                DataStream<PostEvent> postStream, DataStream<CommentEvent> commentStream){
+                                                DataStream<PostEvent> postStream, DataStream<CommentEvent> commentStream, boolean useApply){
 
         Time timeWindow;
 
@@ -108,37 +111,70 @@ public class Query3 extends FlinkRabbitmq{
             default:
                 timeWindow = Time.hours(1);
         }
+        DataStream<String> unionStream;
+        if(useApply) {
+            DataStream<Tuple3<Long, Long, Long>> friendQuery = friendStream
+                    .assignTimestampsAndWatermarks(new FriendshipTimestampExtractor())
+                    .map(new UserIdFriendMapper())
+                    .keyBy(new KeyByUser())
+                    .timeWindow(timeWindow)
+                    .apply(new UserCounter());
 
-        DataStream<Tuple3<Long, Long, Long>> friendQuery = friendStream
-                .assignTimestampsAndWatermarks(new FriendshipTimestampExtractor())
-                .map(new UserIdFriendMapper())
-                .keyBy(new KeyByUser())
-                .timeWindow(timeWindow)
-                .apply(new UserCounter());
+            DataStream<Tuple3<Long, Long, Long>> postQuery = postStream
+                    .assignTimestampsAndWatermarks(new PostTimestampExtractor())
+                    .map(new UserIdPostMapper())
+                    .keyBy(new KeyByUser())
+                    .timeWindow(timeWindow)
+                    .apply(new UserCounter());
 
-        DataStream<Tuple3<Long, Long, Long>> postQuery = postStream
-                .assignTimestampsAndWatermarks(new PostTimestampExtractor())
-                .map(new UserIdPostMapper())
-                .keyBy(new KeyByUser())
-                .timeWindow(timeWindow)
-                .apply(new UserCounter());
+            DataStream<Tuple3<Long, Long, Long>> commentQuery = commentStream
+                    .assignTimestampsAndWatermarks(new CommentTimestampExtractor())
+                    .map(new UserIdCommentMapper())
+                    .keyBy(new KeyByUser())
+                    .timeWindow(timeWindow)
+                    .apply(new UserCounter());
 
-        DataStream<Tuple3<Long, Long, Long>> commentQuery = commentStream
-                .assignTimestampsAndWatermarks(new CommentTimestampExtractor())
-                .map(new UserIdCommentMapper())
-                .keyBy(new KeyByUser())
-                .timeWindow(timeWindow)
-                .apply(new UserCounter());
+            unionStream = friendQuery
+                    .union(postQuery, commentQuery)
+                    .keyBy(new JoinKey())
+                    .timeWindow(timeWindow)
+                    .apply(new JoinCounter())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(timeWindow)
+                    .apply(new Ranking());
+        }
+        else
+        {
+            DataStream<Tuple3<Long, Long, Long>> friendQuery = friendStream
+                    .assignTimestampsAndWatermarks(new FriendshipTimestampExtractor())
+                    .map(new UserIdFriendMapper())
+                    .keyBy(new KeyByUser())
+                    .timeWindow(timeWindow)
+                    .aggregate(new UserCounterAgg(), new UserCounterWF());
 
-        DataStream<String> unionStream = friendQuery
-                .union(postQuery, commentQuery)
-                .keyBy(new JoinKey())
-                .timeWindow(timeWindow)
-                .apply(new JoinCounter())
-                .keyBy(new KeyByWindowStart())
-                .timeWindow(timeWindow)
-                .apply(new Ranking());
+            DataStream<Tuple3<Long, Long, Long>> postQuery = postStream
+                    .assignTimestampsAndWatermarks(new PostTimestampExtractor())
+                    .map(new UserIdPostMapper())
+                    .keyBy(new KeyByUser())
+                    .timeWindow(timeWindow)
+                    .aggregate(new UserCounterAgg(), new UserCounterWF());
 
+            DataStream<Tuple3<Long, Long, Long>> commentQuery = commentStream
+                    .assignTimestampsAndWatermarks(new CommentTimestampExtractor())
+                    .map(new UserIdCommentMapper())
+                    .keyBy(new KeyByUser())
+                    .timeWindow(timeWindow)
+                    .aggregate(new UserCounterAgg(), new UserCounterWF());
+
+            unionStream = friendQuery
+                    .union(postQuery, commentQuery)
+                    .keyBy(new JoinKey())
+                    .timeWindow(timeWindow)
+                    .aggregate(new JoinCounterAgg())
+                    .keyBy(new KeyByWindowStart())
+                    .timeWindow(timeWindow)
+                    .apply(new Ranking());
+        }
         return unionStream;
     }
 }

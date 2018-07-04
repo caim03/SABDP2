@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 /**
  * Counts the number of rides arriving or departing.
  */
-public class Counter implements WindowFunction
+public class FriendShipCounter implements WindowFunction
         <Integer, // input type
         Tuple3<String,Integer, Integer>, // output type
         Integer, // key type
