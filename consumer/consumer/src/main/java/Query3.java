@@ -24,6 +24,8 @@ import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 
+import java.util.Properties;
+
 public class Query3 extends FlinkRabbitmq{
 
     public Query3(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
@@ -33,22 +35,34 @@ public class Query3 extends FlinkRabbitmq{
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
-        boolean writeOnFile = true;
-        boolean useApply = true;
+
+        /**
+         *  writeOnFile: T write on shared file, F write on an apposite rabbitMQ queue
+         *  useApply: T with apply operations, F with aggregates operations (faster)
+         */
+        Properties properties = new ReadProperties().getProperties();
+        boolean writeOnFile = Boolean.parseBoolean(properties.getProperty("writeOnFile"));
+        boolean useApply = Boolean.parseBoolean(properties.getProperty("useApply"));
         Path path = new Path("/results/query3");
 
+        //Set output path
         if(FileSystem.getLocalFileSystem().exists(path)){
             FileSystem.getLocalFileSystem().delete(path, true);
         }
 
+        //Set up rabbitMQ Connection config
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
                 .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
                 .setPassword(rabbitmqPassword).setVirtualHost(rabbitmqVirtualHost)
                 .build();
 
+        //Set up environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
+        /*----Initial Schema----
+        initial mapping of the 3 streams in FriendshipEvent, PostEvent, CommentEvent
+         */
         DataStream<FriendshipEvent> friendStream = env.addSource(new RMQSource<>(connectionConfig,
                 friendQueue,
                 new SimpleStringSchema())).map(line -> new FriendshipEvent(line, false));
@@ -62,6 +76,19 @@ public class Query3 extends FlinkRabbitmq{
                 new SimpleStringSchema())).map(line -> new CommentEvent(line));
 
 
+        /*----Query Schema----
+        for each streams:
+            .assign the watermark
+            .map in an unique field: userId
+            .key by that unique field
+            .timeWindow
+            .apply/aggregate: counter for each userId and build aTuple3<>(start time of the window, userId , sum)
+
+        .union of the 3 streams
+        .ket by the startTimeWindow and the userId
+        .timeWindow
+        .apply: it sums the 3 partial sum of each userId, rank the first 10 elements and build an output formatted string ("startWindow  , postId , sum ...")
+         */
         DataStream<String> unionStreamHour = streaming(0, friendStream, postStream, commentStream, useApply);
         DataStream<String> unionStreamDay = streaming(1, friendStream, postStream, commentStream, useApply);
         DataStream<String> unionStreamWeek = streaming(2, friendStream, postStream, commentStream, useApply);

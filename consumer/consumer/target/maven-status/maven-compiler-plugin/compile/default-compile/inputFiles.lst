@@ -1,9 +1,11 @@
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/aggregator/FriendShipCounterAgg.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/Query1.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/aggregator/JoinCounterAgg.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/keyBy/KeyByWindowStart.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/aggregator/UserCounterAgg.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/keyBy/WindowKey.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/FriendshipTimestampExtractor.java
-/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/reducer/CountReducer.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/aggregator/FullFriendshipCounterAgg.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/keyBy/MyKey2.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/JoinCounter.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/keyBy/MyKey.java
@@ -26,6 +28,7 @@
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/aggregator/StringConcatAgg.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/FriendShipCounter.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/UserCounter.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/windowFunction/UserCounterWF.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/keyBy/JoinKey.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/Event.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/Ranking.java
@@ -33,9 +36,11 @@
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/mapper/CommentMapper.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/PostEvent.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/mapper/MyMapper2.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/ReadProperties.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/events/PostTimestampExtractor.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/keyBy/KeyByUser.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/aggregator/PostCounterAgg.java
+/home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/FullFriendshipCounter.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/StringConcat.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/apply/PostCounter.java
 /home/simone/Documenti/UNI/SABD/progetto2/SABDp2/consumer/consumer/src/main/java/operators/filter/PostFilter.java

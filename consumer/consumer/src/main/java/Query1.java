@@ -6,11 +6,11 @@ import operators.aggregator.StringConcatAgg;
 import operators.apply.FriendShipCounter;
 import operators.apply.StringConcat;
 import operators.evictor.UserEvictor;
-import operators.keyBy.MyKey;
+import operators.keyBy.KeyByTimeSlot;
 import operators.keyBy.MyKey2;
 import operators.keyBy.WindowKey;
-import operators.mapper.MyMapper;
-import operators.mapper.MyMapper2;
+import operators.mapper.FriendshipInitMapper;
+import operators.mapper.TimeSlotMapper;
 import operators.mapper.MyMapper3;
 import operators.apply.FullFriendshipCounter;
 import operators.reducer.ReduceDuplicate;
@@ -31,6 +31,8 @@ import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 
+import java.util.Properties;
+
 public class Query1 extends FlinkRabbitmq {
 
     public Query1(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
@@ -40,36 +42,64 @@ public class Query1 extends FlinkRabbitmq {
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
+        /**
+         *  fullStream: T if windowed stream, F if global windowed (full stream analysis)
+         *  writeOnFile: T write on shared file, F write on an apposite rabbitMQ queue
+         *  useApply: T with apply operations, F with aggregates operations (faster)
+         */
         boolean fullStream = false;
-        boolean writeOnFile = true;
-        boolean useApply = true;
+        Properties properties = new ReadProperties().getProperties();
+        boolean writeOnFile = Boolean.parseBoolean(properties.getProperty("writeOnFile"));
+        boolean useApply = Boolean.parseBoolean(properties.getProperty("useApply"));
 
+
+
+        //Set output path
         Path path = new Path("/results/query1");
 
         if(FileSystem.getLocalFileSystem().exists(path)){
             FileSystem.getLocalFileSystem().delete(path, true);
         }
 
+        //Set up rabbitMQ Connection config
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
                 .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
                 .setPassword(rabbitmqPassword).setVirtualHost(rabbitmqVirtualHost)
                 .build();
 
+        //Set up environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
+        //Initial mapping of the dataStream in FriendshipEvent
+        //Small trick: userId1 and userId2 have been set in ascending order ( => bidirectional friendship are egual! ;) )
         DataStream<FriendshipEvent> dataStream = env.addSource(new RMQSource<>(connectionConfig,
                 friendQueue,
                 new SimpleStringSchema())).map(line -> new FriendshipEvent(line, true));
 
 
+        /*----Initial Schema----
+          .Assign an apposite watermark
+          .Map a stream of FriendshipEvent in Tuple3<Integer, Long, Long> (Time Slot, UserId1, UserId2)
+          .Take all as key (we need to filter duplicates next)
+        */
         KeyedStream<Tuple3<Integer, Long, Long>, Tuple> commonStream = dataStream
                 .assignTimestampsAndWatermarks(new FriendshipTimestampExtractor())
-                .map(new MyMapper())
+                .map(new FriendshipInitMapper())
                 .<KeyedStream<Tuple3<Integer, Long, Long>,Tuple3<Integer, Long, Long>>>keyBy(0,1,2);
 
 
-
+        /*----Query1 Schema----
+           .timeWindow
+           .reduce (just take one of the two inputs, for remove duplicates (= bidirectional friend requests)
+           .map into a single Integer (Time Slot of current record)
+           .key by that unique field
+           .timeWindow
+           .apply/aggregate: count each rows which have the same Time Slot and build a tuple3<Start time of the window, Timeslot, sum>
+           .key by the first field (start time of the window)
+           .timeWindow
+           .apply/aggregate: build an output formatted string ("Start window , TS , sum ...")
+         */
         if(!fullStream){
 
             DataStream<String> hoursStream;
@@ -80,8 +110,8 @@ public class Query1 extends FlinkRabbitmq {
                 hoursStream = commonStream
                         .timeWindow(Time.days(1))
                         .reduce(new ReduceDuplicate())
-                        .map(new MyMapper2())
-                        .keyBy(new MyKey())
+                        .map(new TimeSlotMapper())
+                        .keyBy(new KeyByTimeSlot())
                         .timeWindow(Time.days(1))
                         .apply(new FriendShipCounter())
                         .keyBy(new WindowKey())
@@ -91,8 +121,8 @@ public class Query1 extends FlinkRabbitmq {
                 weekStream = commonStream
                         .timeWindow(Time.days(7))
                         .reduce(new ReduceDuplicate())
-                        .map(new MyMapper2())
-                        .keyBy(new MyKey())
+                        .map(new TimeSlotMapper())
+                        .keyBy(new KeyByTimeSlot())
                         .timeWindow(Time.days(7))
                         .apply(new FriendShipCounter())
                         .keyBy(new WindowKey())
@@ -104,8 +134,8 @@ public class Query1 extends FlinkRabbitmq {
                 hoursStream = commonStream
                         .timeWindow(Time.days(1))
                         .reduce(new ReduceDuplicate())
-                        .map(new MyMapper2())
-                        .keyBy(new MyKey())
+                        .map(new TimeSlotMapper())
+                        .keyBy(new KeyByTimeSlot())
                         .timeWindow(Time.days(1))
                         .aggregate(new FriendShipCounterAgg(), new FriendshipCounterWF())
                         .keyBy(new WindowKey())
@@ -115,8 +145,8 @@ public class Query1 extends FlinkRabbitmq {
                 weekStream = commonStream
                         .timeWindow(Time.days(7))
                         .reduce(new ReduceDuplicate())
-                        .map(new MyMapper2())
-                        .keyBy(new MyKey())
+                        .map(new TimeSlotMapper())
+                        .keyBy(new KeyByTimeSlot())
                         .timeWindow(Time.days(7))
                         .aggregate(new FriendShipCounterAgg(), new FriendshipCounterWF())
                         .keyBy(new WindowKey())
@@ -168,9 +198,12 @@ public class Query1 extends FlinkRabbitmq {
 
             if(writeOnFile)
                 allStream.writeAsText("/results/query1/allDays.out").setParallelism(1);
-            //TODO else
+            else
+                allStream.addSink(new RMQSink<String>(
+                        connectionConfig,            // config for the RabbitMQ connection
+                        query1_4ever,                 // name of the RabbitMQ queue to send messages to
+                        new SimpleStringSchema()));  // serialization schema to turn Java objects to messages
         }
-
         env.execute();
     }
 }

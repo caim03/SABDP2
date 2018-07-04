@@ -6,7 +6,7 @@ import org.apache.flink.api.java.functions.KeySelector;
 /**
  * Return an Integer as key (Time Slot key)
  */
-public class MyKey implements KeySelector<Integer,Integer>
+public class KeyByTimeSlot implements KeySelector<Integer,Integer>
 {
     @Override
     public Integer getKey(Integer integer) throws Exception {

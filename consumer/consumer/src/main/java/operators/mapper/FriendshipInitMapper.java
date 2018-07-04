@@ -7,7 +7,7 @@ import org.apache.flink.api.java.tuple.Tuple3;
 /**
  * Map a stream of FriendshipEvent in Tuple3<Integer, Long, Long> (Time Slot, UserId1, UserId2)
  */
-public class MyMapper implements MapFunction<FriendshipEvent, Tuple3<Integer,Long,Long>> {
+public class FriendshipInitMapper implements MapFunction<FriendshipEvent, Tuple3<Integer,Long,Long>> {
 
     @Override
     public Tuple3<Integer, Long,Long> map(FriendshipEvent event) throws Exception {

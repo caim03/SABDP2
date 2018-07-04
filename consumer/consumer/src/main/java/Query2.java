@@ -22,6 +22,8 @@ import org.apache.flink.streaming.connectors.rabbitmq.RMQSource;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 
+import java.util.Properties;
+
 public class Query2 extends FlinkRabbitmq{
     public Query2(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
         super(rmqConnectionConfig, queueName, deserializationSchema);
@@ -30,27 +32,43 @@ public class Query2 extends FlinkRabbitmq{
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
-        boolean writeOnFile = true;
-        boolean useApply = true;
+        /**
+         *  writeOnFile: T write on shared file, F write on an apposite rabbitMQ queue
+         *  useApply: T with apply operations, F with aggregates operations (faster)
+         */
+        Properties properties = new ReadProperties().getProperties();
+        boolean writeOnFile = Boolean.parseBoolean(properties.getProperty("writeOnFile"));
+        boolean useApply = Boolean.parseBoolean(properties.getProperty("useApply"));
 
+        //Set output path
         Path path = new Path("/results/query2");
 
         if(FileSystem.getLocalFileSystem().exists(path)){
             FileSystem.getLocalFileSystem().delete(path, true);
         }
 
+        //Set up rabbitMQ Connection config
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
                 .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
                 .setPassword(rabbitmqPassword).setVirtualHost(rabbitmqVirtualHost)
                 .build();
 
+        //Set up environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
+        //Initial mapping of the dataStream in FriendshipEvent
+        //Small trick: we will set commentReplied as -1 if the comment is a reply and not a direct comment
         DataStream<CommentEvent> dataStream = env.addSource(new RMQSource<>(connectionConfig,
                 commentQueue,
                 new SimpleStringSchema())).map(line -> new CommentEvent(line));
 
+        /*----Initial Schema----
+          .Assign an apposite watermark
+          .Map a stream of CommentEvent in Tuple2<Long,Long> (postCommented, commentReplied)
+          .filter by commentReplied != -1 (we want only direct comments)
+          .keyBy the postId
+        */
         KeyedStream<Tuple2<Long, Long>, Long> filtered = dataStream
                 .assignTimestampsAndWatermarks(new CommentTimestampExtractor())
                 .map(new CommentMapper())
@@ -61,6 +79,13 @@ public class Query2 extends FlinkRabbitmq{
         DataStream<String> dayStream;
         DataStream<String> weekStream;
 
+        /*----Query Schema----
+        .timeWindow
+        .apply/aggregate: count each row with the same post id and build a tuple3<Start time of the window, postid, sum>
+        .key by the first field (start time of the window)
+        .timeWindow
+        .apply: ranking of the first 10 most commented post of each window, and build an output formatted string ("startWindow  , postId , sum ...") ;
+         */
         if(useApply)
         {
             hourStream = filtered
